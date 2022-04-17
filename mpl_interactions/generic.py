@@ -304,20 +304,32 @@ def zoom_factory(ax, base_scale=1.1):
 
 class panhandler:
     """
-    Enable panning a plot with any mouse button.
+    Enable panning a plot with any mouse button. Call the returned
+    object to disconnect the handler.
 
-    button determines which button will be used (default right click)
-    Left: 1
-    Middle: 2
-    Right: 3
+    .. code-block:: python
+
+       handler = panhandler(my_figure)
+
+       # Disconnect so it can be garbage collected
+       handler()
+       handler = None
+
+    Parameters
+    ----------
+    button : int
+        Determines which button will be used (default right click).
+        Left: 1
+        Middle: 2
+        Right: 3
     """
 
     def __init__(self, fig, button=3):
         self.fig = fig
         self._id_drag = None
         self.button = button
-        self.fig.canvas.mpl_connect("button_press_event", self.press)
-        self.fig.canvas.mpl_connect("button_release_event", self.release)
+        self._id_press = self.fig.canvas.mpl_connect("button_press_event", self.press)
+        self._id_release = self.fig.canvas.mpl_connect("button_release_event", self.release)
 
     def _cancel_action(self):
         self._xypress = []
@@ -362,6 +374,10 @@ class panhandler:
             # button: # multiple button can get pressed during motion...
             a.drag_pan(1, event.key, event.x, event.y)
         self.fig.canvas.draw_idle()
+
+    def __call__(self):
+        self.fig.canvas.mpl_disconnect(self._id_press)
+        self.fig.canvas.mpl_disconnect(self._id_release)
 
 
 class image_segmenter:
