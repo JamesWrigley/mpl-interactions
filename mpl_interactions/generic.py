@@ -337,7 +337,7 @@ class panhandler:
         """
         Status of the panhandler, whether it's enabled or disabled.
         """
-        return self._id_press != None and self._id_release != None
+        return self._id_press is not None and self._id_release is not None
 
     def enable(self):
         """
