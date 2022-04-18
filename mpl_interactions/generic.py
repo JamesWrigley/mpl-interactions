@@ -304,15 +304,14 @@ def zoom_factory(ax, base_scale=1.1):
 
 class panhandler:
     """
-    Enable panning a plot with any mouse button. Call the returned
-    object to disconnect the handler.
+    Enable panning a plot with any mouse button.
 
     .. code-block:: python
 
        handler = panhandler(my_figure)
 
-       # Disconnect so it can be garbage collected
-       handler()
+       # Disable so it can be garbage collected
+       handler.disable()
        handler = None
 
     Parameters
@@ -328,8 +327,51 @@ class panhandler:
         self.fig = fig
         self._id_drag = None
         self.button = button
+        self._id_press = None
+        self._id_release = None
+
+        self.enable()
+
+    @property
+    def enabled(self) -> bool:
+        """
+        Status of the panhandler, whether it's enabled or disabled.
+        """
+        return self._id_press != None and self._id_release != None
+
+    def enable(self):
+        """
+        Enable the panhandler. It should not be necessary to call this function
+        unless it's used after a call to :meth:`panhandler.disable`.
+
+        Raises
+        ------
+        RuntimeError
+            If the panhandler is already enabled.
+        """
+        if self.enabled:
+            raise RuntimeError("The panhandler is already enabled")
+
         self._id_press = self.fig.canvas.mpl_connect("button_press_event", self.press)
         self._id_release = self.fig.canvas.mpl_connect("button_release_event", self.release)
+
+    def disable(self):
+        """
+        Disable the panhandler.
+
+        Raises
+        ------
+        RuntimeError
+            If the panhandler is already disabled.
+        """
+        if not self.enabled:
+            raise RuntimeError("The panhandler is already disabled")
+
+        self.fig.canvas.mpl_disconnect(self._id_press)
+        self.fig.canvas.mpl_disconnect(self._id_release)
+
+        self._id_press = None
+        self._id_release = None
 
     def _cancel_action(self):
         self._xypress = []
@@ -374,10 +416,6 @@ class panhandler:
             # button: # multiple button can get pressed during motion...
             a.drag_pan(1, event.key, event.x, event.y)
         self.fig.canvas.draw_idle()
-
-    def __call__(self):
-        self.fig.canvas.mpl_disconnect(self._id_press)
-        self.fig.canvas.mpl_disconnect(self._id_release)
 
 
 class image_segmenter:
